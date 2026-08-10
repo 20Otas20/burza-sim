@@ -89,7 +89,7 @@ export function Tape({ quotes }: { quotes: Quote[] }) {
   if (quotes.length === 0) {
     return (
       <div className="border-y border-border-soft bg-[var(--bg2)] py-[7px] text-center text-[12px] text-faint">
-        Načítám reálná tržní data…
+        Loading real market data…
       </div>
     );
   }
@@ -131,26 +131,26 @@ export function StatCards({
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <Card label="Celková hodnota" value={usd(value)}>
+      <Card label="Total value" value={usd(value)}>
         <span className={`num ${pl >= 0 ? "text-up" : "text-down"}`}>
           {pl >= 0 ? "+" : ""}
           {usd(pl)} ({pct(plPct)})
         </span>
       </Card>
-      <Card label="Hotovost" value={usd(portfolio.cash)}>
-        <span className="text-faint">{((portfolio.cash / value) * 100).toFixed(1)} % portfolia</span>
+      <Card label="Cash" value={usd(portfolio.cash)}>
+        <span className="text-faint">{((portfolio.cash / value) * 100).toFixed(1)} % of portfolio</span>
       </Card>
-      <Card label="Investováno" value={usd(invested)}>
+      <Card label="Invested" value={usd(invested)}>
         <span className="text-faint">
-          {Object.keys(portfolio.holdings).length} otevřených pozic
+          {Object.keys(portfolio.holdings).length} open positions
         </span>
       </Card>
       <Card
-        label="Nerealizovaný P/L"
+        label="Unrealized P/L"
         value={`${openPl >= 0 ? "+" : ""}${usd(openPl)}`}
         valueClass={openPl >= 0 ? "text-up" : "text-down"}
       >
-        <span className="text-faint">z aktuálních tržních cen</span>
+        <span className="text-faint">from current market prices</span>
       </Card>
     </div>
   );
@@ -179,7 +179,7 @@ function Card({
 export function Clock() {
   const [now, setNow] = useState<string>("");
   useEffect(() => {
-    const update = () => setNow(new Date().toLocaleTimeString("cs-CZ"));
+    const update = () => setNow(new Date().toLocaleTimeString("en-US"));
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
@@ -188,7 +188,7 @@ export function Clock() {
     <div className="text-right text-xs text-muted-foreground">
       <b className="num text-foreground">{now}</b>
       <br />
-      reálná data · živé tikání
+      real data · live ticking
     </div>
   );
 }

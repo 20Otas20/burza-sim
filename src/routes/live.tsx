@@ -8,12 +8,12 @@ function LivePage() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <Link to="/" className="text-primary hover:underline">
-        ← Zpět na terminál
+        ← Back to terminal
       </Link>
-      <h1 className="disp mt-4 text-xl font-semibold">Přehled živých trhů</h1>
+      <h1 className="disp mt-4 text-xl font-semibold">Live markets overview</h1>
       <p className="mt-2 text-sm text-faint">
-        Tahle stránka je zatím jen placeholder — dej vědět, co by na ní mělo být
-        (např. tepelná mapa sektorů, žebříček největších pohybů dne apod.).
+        This page is just a placeholder for now — let me know what should go
+        here (e.g. a sector heatmap, a leaderboard of the day's biggest movers, etc.).
       </p>
     </main>
   );

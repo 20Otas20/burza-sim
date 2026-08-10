@@ -1,14 +1,14 @@
 export type Instrument = {
   symbol: string;
   name: string;
-  kind: "Akcie" | "ETF";
+  kind: "Stock" | "ETF";
   market: string;
 };
 
 const S = (symbol: string, name: string, market: string): Instrument => ({
   symbol,
   name,
-  kind: "Akcie",
+  kind: "Stock",
   market,
 });
 const E = (symbol: string, name: string, market: string): Instrument => ({

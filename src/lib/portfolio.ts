@@ -218,13 +218,13 @@ export function savePortfolio(p: Portfolio, userId?: string) {
 }
 
 export const num = (n: number, digits = 2) =>
-  new Intl.NumberFormat("cs-CZ", {
+  new Intl.NumberFormat("en-US", {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
   }).format(n);
 
-export const usd = (n: number) => `${num(n)} $`;
-export const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)} %`;
+export const usd = (n: number) => `$${num(n)}`;
+export const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 
 export function investedValue(p: Portfolio, prices: Record<string, number>) {
   let v = 0;

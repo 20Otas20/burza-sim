@@ -26,7 +26,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'BURZA·SIM — simulátor obchodování s reálnými trhy',
+        title: 'BURZA·SIM — real-market paper trading simulator',
       },
     ],
     links: [
@@ -43,7 +43,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
 
   return (
-    <html lang="cs">
+    <html lang="en">
       <head>
         <HeadContent />
       </head>

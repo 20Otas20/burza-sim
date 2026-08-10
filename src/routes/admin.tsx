@@ -28,21 +28,21 @@ function AdminPage() {
   return (
     <main className="mx-auto max-w-2xl p-6">
       <Link to="/" className="text-primary hover:underline">
-        ← Zpět na terminál
+        ← Back to terminal
       </Link>
-      <h1 className="disp mt-4 text-xl font-semibold">Statistiky</h1>
-      <p className="mt-1 text-[12.5px] text-faint">Přihlášen jako {user.name}</p>
+      <h1 className="disp mt-4 text-xl font-semibold">Statistics</h1>
+      <p className="mt-1 text-[12.5px] text-faint">Logged in as {user.name}</p>
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatBox label="Registrovaní uživatelé" value={stats?.registeredUsers} />
-        <StatBox label="Unikátní návštěvníci" value={stats?.uniqueVisitors} />
-        <StatBox label="Celkem zobrazení stránek" value={stats?.totalViews} />
+        <StatBox label="Registered users" value={stats?.registeredUsers} />
+        <StatBox label="Unique visitors" value={stats?.uniqueVisitors} />
+        <StatBox label="Total page views" value={stats?.totalViews} />
       </div>
 
       <p className="mt-6 text-[11px] text-faint">
-        Unikátní návštěvník = jedno zařízení/prohlížeč (poznáme podle cookie),
-        i bez registrace. Zobrazení stránek se počítá při každém načtení
-        libovolné stránky (přihlašování, terminál i registrace).
+        A unique visitor is one device/browser (identified via cookie),
+        even without registering. Page views are counted on every load of
+        any page (login, terminal, and registration).
       </p>
     </main>
   );

@@ -55,15 +55,15 @@ export const register = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const email = data.email.trim().toLowerCase();
     if (!email.includes("@")) {
-      return { ok: false as const, error: "Neplatný e-mail." };
+      return { ok: false as const, error: "Invalid email address." };
     }
     if (data.password.length < 6) {
-      return { ok: false as const, error: "Heslo musí mít alespoň 6 znaků." };
+      return { ok: false as const, error: "Password must be at least 6 characters." };
     }
 
     const users = await readUsers();
     if (users.some((u) => u.email === email)) {
-      return { ok: false as const, error: "Účet s tímto e-mailem už existuje." };
+      return { ok: false as const, error: "An account with this email already exists." };
     }
 
     const { hash, salt } = await hashPassword(data.password);
@@ -93,7 +93,7 @@ export const login = createServerFn({ method: "POST" })
     const email = data.email.trim().toLowerCase();
     const users = await readUsers();
     const user = users.find((u) => u.email === email);
-    const genericError = { ok: false as const, error: "Nesprávný e-mail nebo heslo." };
+    const genericError = { ok: false as const, error: "Incorrect email or password." };
     if (!user) return genericError;
 
     const { hash } = await hashPassword(data.password, user.salt);

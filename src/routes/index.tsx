@@ -34,7 +34,12 @@ const RANGES = [
   { key: "1y", label: "1R" },
 ];
 
-const FILTERS = ["Vše", "Akcie", "ETF"] as const;
+const FILTERS = ["All", "Stock", "ETF"] as const;
+const FILTER_LABELS: Record<(typeof FILTERS)[number], string> = {
+  All: "All",
+  Stock: "Stocks",
+  ETF: "ETF",
+};
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
@@ -44,17 +49,17 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "BURZA·SIM — simulátor obchodování s reálnými trhy" },
+      { title: "BURZA·SIM — real-market paper trading simulator" },
       {
         name: "description",
         content:
-          "Obchoduj stovky reálných akcií a ETF s virtuálním kapitálem 100 000 $. Živé ceny, vyhledávání titulů, grafy, portfolio a historie obchodů.",
+          "Trade hundreds of real stocks and ETFs with $100,000 in virtual capital. Live prices, instrument search, charts, portfolio, and trade history.",
       },
-      { property: "og:title", content: "BURZA·SIM — simulátor s reálnými trhy" },
+      { property: "og:title", content: "BURZA·SIM — real-market simulator" },
       {
         property: "og:description",
         content:
-          "Stovky reálných akcií a ETF, živé ceny, vyhledávání a virtuální portfolio.",
+          "Hundreds of real stocks and ETFs, live prices, search, and a virtual portfolio.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -70,7 +75,7 @@ function Terminal() {
   const [portfolio, setPortfolio] = useState<Portfolio>(() => defaultPortfolio());
   const [hydrated, setHydrated] = useState(false);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("Vše");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [symbol, setSymbol] = useState("AAPL");
   const [range, setRange] = useState("1d");
   const [trade, setTrade] = useState<{ symbol: string; side: "B" | "S" } | null>(null);
@@ -95,18 +100,18 @@ function Terminal() {
 
   const results = useMemo(() => {
     const base = query.trim() ? searchUniverse(query, 60) : UNIVERSE;
-    const filtered = filter === "Vše" ? base : base.filter((i) => i.kind === filter);
+    const filtered = filter === "All" ? base : base.filter((i) => i.kind === filter);
     return query.trim() ? filtered : filtered.slice(0, 0);
   }, [query, filter]);
 
-  // Výchozí zobrazení (bez vyhledávání) teď vždy ukazuje prvních 150 titulů
-  // z celého univerza (podle filtru Akcie/ETF), místo aby záviselo na
-  // watchlistu uloženém v prohlížeči — díky tomu je jisté, že je vidět
-  // dostatek titulů i u účtů se starým/prázdným watchlistem.
+  // The default view (no search) always shows the first 150 instruments
+  // from the full universe (respecting the Stock/ETF filter), instead of
+  // depending on the watchlist stored in the browser — this guarantees
+  // enough instruments show up even for accounts with an old/empty watchlist.
   const DEFAULT_LIST_LIMIT = 150;
 
   const defaultList = useMemo(() => {
-    const base = filter === "Vše" ? UNIVERSE : UNIVERSE.filter((i) => i.kind === filter);
+    const base = filter === "All" ? UNIVERSE : UNIVERSE.filter((i) => i.kind === filter);
     return base.slice(0, DEFAULT_LIST_LIMIT);
   }, [filter]);
 
@@ -118,9 +123,9 @@ function Terminal() {
   const quotesQuery = useQuery({
     queryKey: ["quotes", listSymbols],
     queryFn: () => getQuotes({ data: { symbols: listSymbols } }),
-    // S watchlistem na 150 titulů je 3s interval už riskantní pro rate limit
-    // Yahoo Finance (150 requestů každé 3s = hodně). 8s je bezpečnější
-    // kompromis — živý pocit mezitím dotváří LivePrice/BidAsk tik po 1s.
+    // With a 150-item watchlist, a 3s interval risks hitting Yahoo Finance's
+    // rate limit (150 requests every 3s adds up). 8s is a safer middle ground —
+    // the LivePrice/BidAsk 1s tick keeps it feeling live in between.
     refetchInterval: 8000,
     placeholderData: (prev: Quote[] | undefined) => prev,
   });
@@ -169,7 +174,7 @@ function Terminal() {
   };
 
   const reset = () => {
-    if (!window.confirm("Opravdu chceš resetovat portfolio na výchozích 100 000 $?")) return;
+    if (!window.confirm("Are you sure you want to reset the portfolio to $100,000?")) return;
     update(defaultPortfolio());
   };
 
@@ -186,9 +191,9 @@ function Terminal() {
               BURZA·SIM
             </div>
             <p className="mt-0.5 text-[11px] text-faint">
-              {UNIVERSE.length} reálných akcií a ETF · virtuální kapitál ·{" "}
+              {UNIVERSE.length} real stocks and ETFs · virtual capital ·{" "}
               <Link to="/live" className="text-primary hover:underline">
-                přehled živých trhů
+                live markets overview
               </Link>
             </p>
           </div>
@@ -206,7 +211,7 @@ function Terminal() {
                 onClick={handleLogout}
                 className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
               >
-                Odhlásit se
+                Log out
               </button>
             </div>
             <Clock />
@@ -220,8 +225,8 @@ function Terminal() {
 
           <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
             <Panel
-              title={query.trim() ? "Výsledky hledání" : "Tržní přehled"}
-              hint={`${rows.length} titulů`}
+              title={query.trim() ? "Search results" : "Market overview"}
+              hint={`${rows.length} instruments`}
             >
               <div className="mb-3 flex flex-wrap gap-2">
                 <input
@@ -241,7 +246,7 @@ function Terminal() {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {f}
+                      {FILTER_LABELS[f]}
                     </button>
                   ))}
                 </div>
@@ -251,7 +256,7 @@ function Terminal() {
                 <table className="w-full border-collapse text-[12.5px]">
                   <thead>
                     <tr>
-                      {["Titul", "Bid / Ask", "Změna", ""].map((h, i) => (
+                      {["Instrument", "Bid / Ask", "Change", ""].map((h, i) => (
                         <th
                           key={i}
                           className="sticky top-0 border-b border-border-soft bg-panel px-2 pb-2 text-left text-[10.5px] font-semibold uppercase tracking-[0.5px] text-faint"
@@ -303,7 +308,7 @@ function Terminal() {
                               }}
                               className="rounded-md border border-up/35 bg-panel2 px-2.5 py-1 text-[11.5px] font-semibold text-up transition-colors hover:bg-up-soft"
                             >
-                              Koupit
+                              Buy
                             </button>
                             {owned && (
                               <button
@@ -313,11 +318,11 @@ function Terminal() {
                                 }}
                                 className="ml-1.5 rounded-md border border-down/35 bg-panel2 px-2.5 py-1 text-[11.5px] font-semibold text-down transition-colors hover:bg-down-soft"
                               >
-                                Prodat
+                                Sell
                               </button>
                             )}
                             <button
-                              title={watched ? "Odebrat z watchlistu" : "Přidat do watchlistu"}
+                              title={watched ? "Remove from watchlist" : "Add to watchlist"}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleWatch(i.symbol);
@@ -335,7 +340,7 @@ function Terminal() {
                     {rows.length === 0 && (
                       <tr>
                         <td colSpan={4} className="px-2 py-6 text-center text-xs text-faint">
-                          Nic nenalezeno — zkus jiný název nebo ticker.
+                          Nothing found — try a different name or ticker.
                         </td>
                       </tr>
                     )}
@@ -403,11 +408,11 @@ function Terminal() {
                         dataKey="t"
                         tickFormatter={(t: number) =>
                           range === "1d"
-                            ? new Date(t).toLocaleTimeString("cs-CZ", {
+                            ? new Date(t).toLocaleTimeString("en-US", {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })
-                            : new Date(t).toLocaleDateString("cs-CZ", {
+                            : new Date(t).toLocaleDateString("en-US", {
                                 day: "2-digit",
                                 month: "2-digit",
                               })
@@ -432,7 +437,7 @@ function Terminal() {
                           borderRadius: 8,
                           fontSize: 12,
                         }}
-                        labelFormatter={(t) => new Date(Number(t)).toLocaleString("cs-CZ")}
+                        labelFormatter={(t) => new Date(Number(t)).toLocaleString("en-US")}
                         formatter={(v) => [num(Number(v)), "Cena"]}
                       />
                       <Area
@@ -448,7 +453,7 @@ function Terminal() {
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-full items-center justify-center text-xs text-faint">
-                    {seriesQuery.isError ? "Data nejsou dostupná." : "Načítám graf…"}
+                    {seriesQuery.isError ? "Data not available." : "Loading chart…"}
                   </div>
                 )}
               </div>
@@ -456,10 +461,10 @@ function Terminal() {
               {detail && (
                 <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[
-                    ["Denní max", num(detail.dayHigh)],
-                    ["Denní min", num(detail.dayLow)],
-                    ["Zavírací", num(detail.previousClose)],
-                    ["Objem", detail.volume.toLocaleString("cs-CZ")],
+                    ["Day high", num(detail.dayHigh)],
+                    ["Day low", num(detail.dayLow)],
+                    ["Prev. close", num(detail.previousClose)],
+                    ["Volume", detail.volume.toLocaleString("en-US")],
                   ].map(([label, value]) => (
                     <div
                       key={label}
@@ -479,30 +484,30 @@ function Terminal() {
                   onClick={() => setTrade({ symbol, side: "B" })}
                   className="flex-1 rounded-md border border-up/35 bg-panel2 py-2 text-[12.5px] font-semibold text-up transition-colors hover:bg-up-soft"
                 >
-                  Koupit {symbol}
+                  Buy {symbol}
                 </button>
                 <button
                   onClick={() => setTrade({ symbol, side: "S" })}
                   disabled={!portfolio.holdings[symbol]}
                   className="flex-1 rounded-md border border-down/35 bg-panel2 py-2 text-[12.5px] font-semibold text-down transition-colors hover:bg-down-soft disabled:opacity-40"
                 >
-                  Prodat {symbol}
+                  Sell {symbol}
                 </button>
               </div>
             </Panel>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Pozice" hint={`${holdingIds.length} otevřených`}>
+            <Panel title="Positions" hint={`${holdingIds.length} open`}>
               {holdingIds.length === 0 ? (
                 <p className="py-3.5 text-center text-xs text-faint">
-                  Zatím nevlastníš žádné tituly.
+                  You don't own any instruments yet.
                 </p>
               ) : (
                 <table className="w-full border-collapse text-[12.5px]">
                   <thead>
                     <tr>
-                      {["Titul", "Ks", "Hodnota", "Zisk/Ztráta"].map((h) => (
+                      {["Instrument", "Qty", "Value", "P/L"].map((h) => (
                         <th
                           key={h}
                           className="border-b border-border-soft px-2 pb-2 text-left text-[10.5px] font-semibold uppercase tracking-[0.5px] text-faint"
@@ -523,7 +528,7 @@ function Terminal() {
                         <tr key={id} className="border-b border-border-soft last:border-0">
                           <td className="px-2 py-2">
                             <div className="font-semibold">{id}</div>
-                            <div className="text-[10.5px] text-faint">prům. {usd(h.avgCost)}</div>
+                            <div className="text-[10.5px] text-faint">avg. {usd(h.avgCost)}</div>
                           </td>
                           <td className="num px-2 py-2">{h.qty}</td>
                           <td className="num px-2 py-2">{usd(h.qty * price)}</td>
@@ -540,10 +545,10 @@ function Terminal() {
               )}
             </Panel>
 
-            <Panel title="Historie obchodů">
+            <Panel title="Trade history">
               {portfolio.tx.length === 0 ? (
                 <p className="py-3.5 text-center text-xs text-faint">
-                  Žádné obchody zatím neproběhly.
+                  No trades yet.
                 </p>
               ) : (
                 <div className="max-h-[260px] overflow-y-auto">
@@ -558,12 +563,12 @@ function Terminal() {
                             t.side === "B" ? "bg-up-soft text-up" : "bg-down-soft text-down"
                           }`}
                         >
-                          {t.side === "B" ? "KOUPĚ" : "PRODEJ"}
+                          {t.side === "B" ? "BUY" : "SELL"}
                         </span>
                         <b className="ml-1.5">{t.symbol}</b>
                         <div className="text-[10.5px] text-faint">
                           {t.qty} ks · {usd(t.price)}/ks ·{" "}
-                          {new Date(t.t).toLocaleString("cs-CZ")}
+                          {new Date(t.t).toLocaleString("en-US")}
                         </div>
                       </div>
                       <span className="num text-right">{usd(t.total)}</span>

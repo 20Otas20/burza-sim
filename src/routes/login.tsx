@@ -28,11 +28,11 @@ function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center p-6">
-      <h1 className="disp mb-1 text-xl font-semibold">Přihlášení</h1>
+      <h1 className="disp mb-1 text-xl font-semibold">Log in</h1>
       <p className="mb-6 text-[12.5px] text-faint">
-        Nemáš účet?{" "}
+        Don't have an account?{" "}
         <Link to="/register" className="text-primary hover:underline">
-          Zaregistruj se
+          Sign up
         </Link>
       </p>
 
@@ -40,7 +40,7 @@ function LoginPage() {
         <input
           type="email"
           required
-          placeholder="E-mail"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="rounded-[7px] border border-border bg-[var(--bg2)] px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint focus:border-primary"
@@ -48,7 +48,7 @@ function LoginPage() {
         <input
           type="password"
           required
-          placeholder="Heslo"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="rounded-[7px] border border-border bg-[var(--bg2)] px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint focus:border-primary"
@@ -59,7 +59,7 @@ function LoginPage() {
           disabled={busy}
           className="mt-1 rounded-md border border-primary/40 bg-panel2 py-2 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
         >
-          {busy ? "Přihlašuji…" : "Přihlásit se"}
+          {busy ? "Logging in…" : "Log in"}
         </button>
       </form>
     </main>

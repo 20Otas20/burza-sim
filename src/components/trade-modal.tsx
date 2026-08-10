@@ -36,11 +36,11 @@ export function TradeModal({
 
   const error =
     !price
-      ? "Cena zatím není k dispozici."
+      ? "Price not available yet."
       : side === "B" && total > cash
-        ? "Nedostatek hotovosti."
+        ? "Insufficient cash."
         : side === "S" && qty > ownedQty
-          ? "Nevlastníš tolik kusů."
+          ? "You don't own that many shares."
           : "";
 
   return (
@@ -51,7 +51,7 @@ export function TradeModal({
       <div className="w-[340px] rounded-xl border border-border bg-panel p-5 shadow-2xl">
         <h3 className="disp text-base font-semibold">{name}</h3>
         <p className="mb-4 text-[11.5px] text-faint">
-          {symbol} · tržní cena <b className="num text-foreground">{usd(price)}</b>{" "}
+          {symbol} · market price <b className="num text-foreground">{usd(price)}</b>{" "}
           <span className={`num ${changePercent >= 0 ? "text-up" : "text-down"}`}>
             {pct(changePercent)}
           </span>
@@ -70,13 +70,13 @@ export function TradeModal({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {s === "B" ? "Koupit" : "Prodat"}
+              {s === "B" ? "Buy" : "Sell"}
             </button>
           ))}
         </div>
 
         <label className="mb-1.5 block text-[11px] text-faint" htmlFor="qty">
-          Počet kusů
+          Quantity
         </label>
         <input
           id="qty"
@@ -88,10 +88,10 @@ export function TradeModal({
           className="num mb-3 w-full rounded-[7px] border border-border bg-[var(--bg2)] px-2.5 py-2 text-sm text-foreground outline-none focus:border-primary"
         />
 
-        <Row label="Cena za kus" value={usd(price)} />
-        <Row label="Celkem" value={usd(total)} />
+        <Row label="Price per share" value={usd(price)} />
+        <Row label="Total" value={usd(total)} />
         <Row
-          label={side === "B" ? "Hotovost k dispozici" : "Vlastněných kusů"}
+          label={side === "B" ? "Cash available" : "Shares owned"}
           value={side === "B" ? usd(cash) : num(ownedQty, 0)}
         />
 
@@ -102,7 +102,7 @@ export function TradeModal({
             onClick={onClose}
             className="flex-1 rounded-md border border-border-soft py-2 text-[13px] font-semibold text-muted-foreground transition-colors hover:border-border hover:text-foreground"
           >
-            Zrušit
+            Cancel
           </button>
           <button
             disabled={!!error || qty <= 0}
@@ -113,7 +113,7 @@ export function TradeModal({
                 : "border-down/35 text-down hover:bg-down-soft"
             }`}
           >
-            {side === "B" ? "Koupit" : "Prodat"}
+            {side === "B" ? "Buy" : "Sell"}
           </button>
         </div>
       </div>

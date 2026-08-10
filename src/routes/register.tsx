@@ -29,18 +29,18 @@ function RegisterPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center p-6">
-      <h1 className="disp mb-1 text-xl font-semibold">Registrace</h1>
+      <h1 className="disp mb-1 text-xl font-semibold">Sign up</h1>
       <p className="mb-6 text-[12.5px] text-faint">
-        Už máš účet?{" "}
+        Already have an account?{" "}
         <Link to="/login" className="text-primary hover:underline">
-          Přihlas se
+          Log in
         </Link>
       </p>
 
       <form onSubmit={submit} className="flex flex-col gap-3">
         <input
           required
-          placeholder="Jméno"
+          placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-[7px] border border-border bg-[var(--bg2)] px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint focus:border-primary"
@@ -48,7 +48,7 @@ function RegisterPage() {
         <input
           type="email"
           required
-          placeholder="E-mail"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="rounded-[7px] border border-border bg-[var(--bg2)] px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint focus:border-primary"
@@ -56,7 +56,7 @@ function RegisterPage() {
         <input
           type="password"
           required
-          placeholder="Heslo (min. 6 znaků)"
+          placeholder="Password (min. 6 characters)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="rounded-[7px] border border-border bg-[var(--bg2)] px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint focus:border-primary"
@@ -67,7 +67,7 @@ function RegisterPage() {
           disabled={busy}
           className="mt-1 rounded-md border border-primary/40 bg-panel2 py-2 text-[13px] font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
         >
-          {busy ? "Zakládám účet…" : "Vytvořit účet"}
+          {busy ? "Creating account…" : "Create account"}
         </button>
       </form>
     </main>
