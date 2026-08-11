@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -14,6 +14,7 @@ import { BidAsk, Clock, LivePrice, Panel, StatCards, Tape } from "@/components/t
 import { TradeModal } from "@/components/trade-modal";
 import { getQuotes, getSeries, type Quote } from "@/lib/market.functions";
 import { getCurrentUser, logout } from "@/lib/auth.functions";
+import { reportNetWorth } from "@/lib/leaderboard.functions";
 import {
   applyTrade,
   defaultPortfolio,
@@ -21,6 +22,7 @@ import {
   num,
   pct,
   savePortfolio,
+  totalValue,
   usd,
   type Portfolio,
 } from "@/lib/portfolio";
@@ -149,6 +151,16 @@ function Terminal() {
     return p;
   }, [quotes]);
 
+  // Pošle aktuální hodnotu portfolia na server pro žebříček (/leaderboard).
+  // Server jinak o portfoliích nic neví — ta žijí jen v localStorage klienta.
+  const netWorth = totalValue(portfolio, prices);
+  useEffect(() => {
+    if (!hydrated || quotes.length === 0) return;
+    reportNetWorth({ data: { userId: user.id, name: user.name, value: netWorth } }).catch(
+      () => {},
+    );
+  }, [hydrated, netWorth, quotes.length, user.id, user.name]);
+
   const rows = query.trim() ? results : defaultList;
 
   const selected = UNIVERSE_BY_SYMBOL[symbol];
@@ -201,10 +213,17 @@ function Terminal() {
             <div className="text-right text-xs">
               <div className="font-semibold text-foreground">{user.name}</div>
               <Link
+                to="/leaderboard"
+                className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Leaderboard
+              </Link>
+              {" · "}
+              <Link
                 to="/admin"
                 className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
               >
-                Statistiky
+                Statistics
               </Link>
               {" · "}
               <button
