@@ -7,13 +7,15 @@ import { recordVisit } from '@/lib/stats.functions'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: async () => {
-    // Zaznamená zobrazení stránky pro statistiku na /admin. Nesmí shodit
-    // celou stránku, kdyby zápis do souboru selhal.
-    try {
-      await recordVisit();
-    } catch {
-      /* ignore */
+  beforeLoad: async ({ location }) => {
+    // Zaznamená zobrazení stránky pro statistiku na /admin — ale ne návštěvu
+    // samotné /admin stránky, jinak si tam počítáš i vlastní kontrolování.
+    if (location.pathname !== '/admin') {
+      try {
+        await recordVisit();
+      } catch {
+        /* ignore */
+      }
     }
   },
   head: () => ({
