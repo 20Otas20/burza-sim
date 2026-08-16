@@ -1,31 +1,36 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, setCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
+import { kvGet, kvSet } from "@/lib/kv";
+import { getSessionUser } from "@/lib/auth.functions";
 
-const STATS_PATH = path.join(process.cwd(), "data", "stats.json");
-const USERS_PATH = path.join(process.cwd(), "data", "users.json");
 const VISITOR_COOKIE = "burza_visitor";
 
-type Stats = { totalViews: number; visitorIds: string[] };
+const ONLINE_WINDOW_MS = 2 * 60 * 1000; // "online now" = seen in the last 2 min
+const ACTIVE_TODAY_MS = 24 * 60 * 60 * 1000;
+
+type VisitorRecord = { firstSeen: number; lastSeen: number; views: number; name?: string };
+type Stats = { totalViews: number; visitors: Record<string, VisitorRecord> };
+type StoredUser = { id: string };
 
 async function readStats(): Promise<Stats> {
-  try {
-    return JSON.parse(await fs.readFile(STATS_PATH, "utf-8"));
-  } catch {
-    return { totalViews: 0, visitorIds: [] };
+  const raw = await kvGet<any>("stats", { totalViews: 0, visitors: {} });
+  // Zpětná kompatibilita se starším formátem (visitorIds: string[]).
+  if (Array.isArray(raw.visitorIds)) {
+    return { totalViews: raw.totalViews ?? 0, visitors: {} };
   }
+  return { totalViews: raw.totalViews ?? 0, visitors: raw.visitors ?? {} };
 }
 
 async function writeStats(s: Stats) {
-  await fs.mkdir(path.dirname(STATS_PATH), { recursive: true });
-  await fs.writeFile(STATS_PATH, JSON.stringify(s, null, 2));
+  await kvSet("stats", s);
 }
 
 // Volá se při každém načtení stránky (viz __root.tsx beforeLoad). Nastaví
-// dlouhodobou cookie s náhodným ID návštěvníka (pokud ještě nemá) a připočte
-// zobrazení. Unikátní návštěvníci = počet různých ID, co jsme kdy viděli.
+// dlouhodobou cookie s náhodným ID návštěvníka (pokud ještě nemá) a
+// aktualizuje jeho poslední aktivitu. Pokud je návštěvník přihlášený, eviduje
+// se pod jeho účtem (userId) i se jménem, aby šlo na /admin ukázat jmenný
+// seznam lidí online — anonymní návštěvy se dál počítají jen jako číslo.
 export const recordVisit = createServerFn({ method: "POST" }).handler(async () => {
   let visitorId = getCookie(VISITOR_COOKIE);
   if (!visitorId) {
@@ -37,25 +42,43 @@ export const recordVisit = createServerFn({ method: "POST" }).handler(async () =
       maxAge: 60 * 60 * 24 * 365,
     });
   }
+
+  const user = await getSessionUser().catch(() => null);
+  const key = user ? `user:${user.id}` : visitorId;
+
   const stats = await readStats();
+  const now = Date.now();
+  const existing = stats.visitors[key];
+  stats.visitors[key] = {
+    firstSeen: existing?.firstSeen ?? now,
+    lastSeen: now,
+    views: (existing?.views ?? 0) + 1,
+    name: user?.name,
+  };
   stats.totalViews += 1;
-  if (!stats.visitorIds.includes(visitorId)) stats.visitorIds.push(visitorId);
   await writeStats(stats);
   return { ok: true };
 });
 
 export const getStats = createServerFn({ method: "GET" }).handler(async () => {
   const stats = await readStats();
-  let registeredUsers = 0;
-  try {
-    const users = JSON.parse(await fs.readFile(USERS_PATH, "utf-8"));
-    registeredUsers = Array.isArray(users) ? users.length : 0;
-  } catch {
-    /* soubor ještě neexistuje = 0 uživatelů */
-  }
+  const now = Date.now();
+  const visitors = Object.values(stats.visitors);
+
+  const users = await kvGet<StoredUser[]>("users", []);
+  const registeredUsers = Array.isArray(users) ? users.length : 0;
+
+  const onlineUsers = visitors
+    .filter((v) => v.name && now - v.lastSeen <= ONLINE_WINDOW_MS)
+    .map((v) => v.name as string)
+    .sort();
+
   return {
     totalViews: stats.totalViews,
-    uniqueVisitors: stats.visitorIds.length,
+    uniqueVisitors: visitors.length,
+    onlineNow: visitors.filter((v) => now - v.lastSeen <= ONLINE_WINDOW_MS).length,
+    activeToday: visitors.filter((v) => now - v.lastSeen <= ACTIVE_TODAY_MS).length,
     registeredUsers,
+    onlineUsers,
   };
 });
