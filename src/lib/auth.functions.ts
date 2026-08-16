@@ -1,15 +1,16 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import fs from "node:fs/promises";
-import path from "node:path";
 import { setCookie, getCookie, deleteCookie } from "@tanstack/react-start/server";
+import { kvGet, kvSet } from "@/lib/kv";
 
 const scryptAsync = promisify(scrypt);
-const DB_PATH = path.join(process.cwd(), "data", "users.json");
 const SESSION_COOKIE = "burza_session";
 
-// V paměti serveru. Pro produkci s více instancemi nahraď Redis/DB.
+// V paměti serveru. Sessions se tedy při restartu/nasazení vždy vynulují
+// (uživatelé se musí znovu přihlásit) — ale samotné účty (email/heslo) teď
+// žijí v Upstash Redis přes kv.ts, takže přežijí a není potřeba se znovu
+// registrovat.
 const SESSIONS = new Map<string, { userId: string; expires: number }>();
 
 type User = {
@@ -23,16 +24,11 @@ type User = {
 export type PublicUser = { id: string; email: string; name: string };
 
 async function readUsers(): Promise<User[]> {
-  try {
-    return JSON.parse(await fs.readFile(DB_PATH, "utf-8"));
-  } catch {
-    return [];
-  }
+  return kvGet<User[]>("users", []);
 }
 
 async function writeUsers(users: User[]) {
-  await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-  await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
+  await kvSet("users", users);
 }
 
 async function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
@@ -118,14 +114,19 @@ export const logout = createServerFn({ method: "POST" }).handler(async () => {
   return { ok: true };
 });
 
-export const getCurrentUser = createServerFn({ method: "GET" }).handler(
-  async (): Promise<PublicUser | null> => {
-    const token = getCookie(SESSION_COOKIE);
-    if (!token) return null;
-    const session = SESSIONS.get(token);
-    if (!session || session.expires < Date.now()) return null;
-    const users = await readUsers();
-    const user = users.find((u) => u.id === session.userId);
-    return user ? toPublic(user) : null;
-  },
-);
+// Sdílená logika mimo createServerFn, aby ji šlo volat i z jiných server
+// funkcí (viz stats.functions.ts — potřebuje vědět, kdo je přihlášený, aby
+// mohl zobrazit jména lidí online, ne jen anonymní počet). createServerOnlyFn
+// zajistí, že tahle funkce (a její server-only importy) nikdy neskončí v
+// klientském balíčku.
+export const getSessionUser = createServerOnlyFn(async (): Promise<PublicUser | null> => {
+  const token = getCookie(SESSION_COOKIE);
+  if (!token) return null;
+  const session = SESSIONS.get(token);
+  if (!session || session.expires < Date.now()) return null;
+  const users = await readUsers();
+  const user = users.find((u) => u.id === session.userId);
+  return user ? toPublic(user) : null;
+});
+
+export const getCurrentUser = createServerFn({ method: "GET" }).handler(getSessionUser);
